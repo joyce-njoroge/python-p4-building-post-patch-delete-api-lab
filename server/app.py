@@ -66,5 +66,56 @@ def most_expensive_baked_good():
     )
     return response
 
+@app.route('/bakeries/<int:id>', methods=['GET'])
+def get_bakery_by_id(id):
+    bakery = Bakery.query.get(id)
+    if bakery:
+        bakery_serialized = bakery.to_dict()
+        return jsonify(bakery_serialized), 200
+    else:
+        return jsonify({'error': 'Bakery not found'}), 404
+
+
+@app.route('/bakeries/<int:id>', methods=['PATCH'])
+def update_bakery_by_id(id):
+    bakery = db.session.get(Bakery, id)
+    if bakery:
+        new_name = request.form.get('name')
+        if new_name:
+            bakery.name = new_name
+            db.session.commit()
+            bakery_serialized = bakery.to_dict()
+            return jsonify(bakery_serialized), 200
+        else:
+            return jsonify({'error': 'New name not provided'}), 400
+    else:
+        return jsonify({'error': 'Bakery not found'}), 404
+
+@app.route('/baked_goods', methods=['POST'])
+def create_baked_good():
+    name = request.form.get('name')
+    price = request.form.get('price')
+    bakery_id = request.form.get('bakery_id')
+
+    if name and price and bakery_id:
+        baked_good = BakedGood(name=name, price=price, bakery_id=bakery_id)
+        db.session.add(baked_good)
+        db.session.commit()
+        baked_good_serialized = baked_good.to_dict()
+        return jsonify(baked_good_serialized), 201  # Change the status code to 201
+    else:
+        return jsonify({'error': 'Incomplete data provided'}), 400
+    
+@app.route('/baked_goods/<int:id>', methods=['DELETE'])
+def delete_baked_good(id):
+    baked_good = db.session.get(BakedGood, id)
+    if baked_good:
+        db.session.delete(baked_good)
+        db.session.commit()
+        return jsonify({'message': 'Baked good deleted successfully'}), 200
+    else:
+        return jsonify({'error': 'Baked good not found'}), 404
+
+
 if __name__ == '__main__':
     app.run(port=5555, debug=True)
